@@ -42,7 +42,6 @@ namespace FacegenBaseline
 
             if (settings.BaselineMods.Count > 1) settings.BaselineMods.Reverse(); // reverse order to parse first with more priority
 
-
             bool checkIfExcluded = settings.ExcludeNPCByKeywords.Count > 0;
             if (!checkIfExcluded) Console.WriteLine($"Excluded list is empty");
 
@@ -55,6 +54,7 @@ namespace FacegenBaseline
                 if (!PatcherState.LoadOrder.TryGetValue(baselineModKey, out IModListing<ISkyrimModGetter>? baselineMod) || baselineMod == null || baselineMod.Mod == null)
                 {
                     Console.WriteLine($"{baselineModName} not found in Load Order");
+                    continue;
                 }
 
                 var baselineNPCs = baselineMod!.Mod!.Npcs;
@@ -70,9 +70,8 @@ namespace FacegenBaseline
                         && baselineNPC.EditorID.Contains(keyword))) continue; // skip because edid contains keyword
 
                     // we need to introspect the provenance of the record
-                    var contexts = state.LinkCache.ResolveAllContexts<INpc, INpcGetter>(baselineNPC.FormKey).ToList();
-                    var currentWinner = contexts[0];
-                    if (currentWinner.ModKey == baselineModKey)
+                    var winner = state.LinkCache.ResolveContext<INpc, INpcGetter>(baselineNPC.FormKey, Mutagen.Bethesda.Plugins.Cache.ResolveTarget.Winner);
+                    if (winner.ModKey == baselineModKey)
                     {
                         Console.WriteLine("Baseline is winning override for {0}/{1:X8}", baselineNPC.Name, baselineNPC.FormKey.ID);
                         ++alreadyWins;
@@ -82,18 +81,18 @@ namespace FacegenBaseline
                     parsedNPCs.Add(baselineNPC.FormKey);
 
                     // Compare winning override Head Parts with master - if this record is already overriding the appearance, we let it win
-                    var master = contexts.Last();
-                    var masterHDPTs = master.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache)).ToHashSet();
-                    var winnerHDPTs = currentWinner.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache)).ToHashSet();
-                    if (masterHDPTs.SetEquals(winnerHDPTs))
+                    var origin = state.LinkCache.ResolveContext<INpc, INpcGetter>(baselineNPC.FormKey, Mutagen.Bethesda.Plugins.Cache.ResolveTarget.Origin);
+                    var originHDPTs = origin.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache)).ToHashSet();
+                    var winnerHDPTs = winner.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache)).ToHashSet();
+                    if (originHDPTs.SetEquals(winnerHDPTs))
                     {
                         Console.WriteLine("Baseline appearance used for {0}/{1:X8}", baselineNPC.Name, baselineNPC.FormKey.ID);
-                        UseBaselineAppearance(baselineNPC, currentWinner.Record);
+                        UseBaselineAppearance(baselineNPC, winner.Record);
                         ++useBaseline;
                     }
                     else
                     {
-                        Console.WriteLine("Appearance for {0}/{1:X8} provided by {2}", baselineNPC.Name, baselineNPC.FormKey.ID, currentWinner.ModKey.FileName);
+                        Console.WriteLine("Appearance for {0}/{1:X8} provided by {2}", baselineNPC.Name, baselineNPC.FormKey.ID, winner.ModKey.FileName);
                         ++hasBetterFacegen;
                     }
                 }
