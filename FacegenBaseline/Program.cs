@@ -82,9 +82,9 @@ namespace FacegenBaseline
 
                     // Compare winning override Head Parts with master - if this record is already overriding the appearance, we let it win
                     var origin = state.LinkCache.ResolveContext<INpc, INpcGetter>(baselineNPC.FormKey, Mutagen.Bethesda.Plugins.Cache.ResolveTarget.Origin);
-                    var originHDPTs = origin.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache)).ToHashSet();
-                    var winnerHDPTs = winner.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache)).ToHashSet();
-                    if (originHDPTs.SetEquals(winnerHDPTs))
+                    var originHDPTs = origin.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache));
+                    var winnerHDPTs = winner.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache));
+                    if (originHDPTs.SequenceEqual(winnerHDPTs))
                     {
                         Console.WriteLine("Baseline appearance used for {0}/{1:X8}", baselineNPC.Name, baselineNPC.FormKey.ID);
                         UseBaselineAppearance(baselineNPC, winner.Record);
