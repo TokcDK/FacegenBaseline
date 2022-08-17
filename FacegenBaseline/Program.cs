@@ -42,7 +42,6 @@ namespace FacegenBaseline
 
             if (settings.BaselineMods.Count > 1) settings.BaselineMods.Reverse(); // reverse order to parse first with more priority
 
-
             bool checkIfExcluded = settings.ExcludeNPCByKeywords.Count > 0;
             if (!checkIfExcluded) Console.WriteLine($"Excluded list is empty");
 
@@ -83,9 +82,9 @@ namespace FacegenBaseline
 
                     // Compare winning override Head Parts with master - if this record is already overriding the appearance, we let it win
                     var origin = state.LinkCache.ResolveContext<INpc, INpcGetter>(baselineNPC.FormKey, Mutagen.Bethesda.Plugins.Cache.ResolveTarget.Origin);
-                    var masterHDPTs = origin.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache)).ToHashSet();
+                    var originHDPTs = origin.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache)).ToHashSet();
                     var winnerHDPTs = winner.Record.HeadParts.Select(s => s.TryResolve<IHeadPartGetter>(state.LinkCache)).ToHashSet();
-                    if (masterHDPTs.SetEquals(winnerHDPTs))
+                    if (originHDPTs.SetEquals(winnerHDPTs))
                     {
                         Console.WriteLine("Baseline appearance used for {0}/{1:X8}", baselineNPC.Name, baselineNPC.FormKey.ID);
                         UseBaselineAppearance(baselineNPC, winner.Record);
