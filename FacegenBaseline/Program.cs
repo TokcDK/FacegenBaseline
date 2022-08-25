@@ -42,18 +42,17 @@ namespace FacegenBaseline
 
             if (settings.BaselineMods.Count > 1) settings.BaselineMods.Reverse(); // reverse order to parse first with more priority
 
-            bool checkIfExcluded = settings.ExcludeNPCByKeywords.Count > 0;
+            bool checkIfExcluded = settings.ExcludeNPCEditorId.Count > 0;
             if (!checkIfExcluded) Console.WriteLine($"Excluded list is empty");
 
             var parsedNPCs = new HashSet<FormKey>();
             int npcRecordsCount = 0;
-            foreach (var baselineModName in settings.BaselineMods)
+            foreach (var baselineModKey in settings.BaselineMods)
             {
                 // skip invalid mods, missing or null
-                ModKey baselineModKey = ModKey.FromNameAndExtension(baselineModName);
                 if (!PatcherState.LoadOrder.TryGetValue(baselineModKey, out IModListing<ISkyrimModGetter>? baselineMod) || baselineMod == null || baselineMod.Mod == null)
                 {
-                    Console.WriteLine($"{baselineModName} not found in Load Order");
+                    Console.WriteLine($"{baselineModKey} not found in Load Order");
                     continue;
                 }
 
@@ -64,10 +63,10 @@ namespace FacegenBaseline
                 {
                     if (baselineNPC == null) continue;
                     if (parsedNPCs.Contains(baselineNPC.FormKey)) continue; // skip already parsed
-                    if (checkIfExcluded && !string.IsNullOrWhiteSpace(baselineNPC.EditorID) && settings.ExcludeNPCByKeywords
-                        .Any(keyword => 
-                        !string.IsNullOrWhiteSpace(keyword)
-                        && baselineNPC.EditorID.Contains(keyword))) continue; // skip because edid contains keyword
+                    if (checkIfExcluded && !string.IsNullOrWhiteSpace(baselineNPC.EditorID) && settings.ExcludeNPCEditorId
+                        .Any(s => 
+                        !string.IsNullOrWhiteSpace(s)
+                        && baselineNPC.EditorID.Contains(s))) continue; // skip because edid contains string
 
                     // we need to introspect the provenance of the record
                     var winner = state.LinkCache.ResolveContext<INpc, INpcGetter>(baselineNPC.FormKey, Mutagen.Bethesda.Plugins.Cache.ResolveTarget.Winner);
